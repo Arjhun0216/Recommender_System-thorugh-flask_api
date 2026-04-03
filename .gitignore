@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment (IMPORTANT!)
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment variables
+.env
+
+# Data files (if you have user data or datasets)
+data/
+*.csv
+*.pkl
+*.db
+*.sqlite
+*.sql
+
+
+# Model files
+models/
+*.h5
+*.pkl
+
+# Flask session
+flask_session/
+instance/
+
+# Logs
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
