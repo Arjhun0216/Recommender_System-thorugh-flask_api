@@ -1,21 +1,18 @@
 # run.py
+import os
 from app import create_app, db
-from app.models import User, Item, Interaction, Recommendation
+from app.models import User, Item, Interaction, Recommendation, Developer
 
-app = create_app("development")
+config_name = os.getenv("FLASK_ENV", "development")
+app = create_app(config_name)
 
 def init_db():
-    """Creates all database tables based on models.py"""
     with app.app_context():
         db.create_all()
-        print("✅ All tables created successfully!")
-        print("   - users")
-        print("   - items")
-        print("   - interactions")
-        print("   - recommendations")
+        print("✅ All tables created!")
 
 if __name__ == "__main__":
-    init_db()  # Create tables first
+    init_db()
     app.run(
         host="0.0.0.0",
         port=5000,
