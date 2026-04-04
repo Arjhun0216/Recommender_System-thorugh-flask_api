@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — RecAPI{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <!-- HEADER -->
+  <div class="dashboard-header">
+    <div>
+      <h1>{{ current_user.app_name }}</h1>
+      <p class="muted">Welcome back, {{ current_user.name }}</p>
+    </div>
+    <div class="dashboard-actions">
+      <a href="{{ url_for('portal.upload') }}" class="btn btn-primary">
+        Import Products
+      </a>
+      <a href="{{ url_for('portal.docs') }}" class="btn btn-ghost">
+        View Docs
+      </a>
+    </div>
+  </div>
+
+  <!-- API KEY SECTION -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Your API Key</h2>
+      {% if new_key %}
+        <span class="badge badge-green">Newly Created</span>
+      {% endif %}
+    </div>
+
+    {% if new_key %}
+      <div class="alert alert-warning">
+        This is the only time your full API key will be shown.
+        Copy it now and store it safely.
+      </div>
+      <div class="key-display">
+        <code id="api-key">{{ new_key }}</code>
+        <button class="btn btn-ghost btn-sm"
+                onclick="copyKey('{{ new_key }}')">
+          Copy
+        </button>
+      </div>
+    {% else %}
+      <div class="key-display">
+        <code id="api-key-masked">
+          {{ current_user.api_key[:8] }}••••••••••••••••••••••••
+        </code>
+        <button class="btn btn-ghost btn-sm"
+                onclick="toggleKey('{{ current_user.api_key }}')">
+          Show
+        </button>
+        <button class="btn btn-ghost btn-sm"
+                onclick="copyKey('{{ current_user.api_key }}')">
+          Copy
+        </button>
+      </div>
+    {% endif %}
+
+    <p class="card-hint">
+      Add this to every API request as the
+      <code>X-API-Key</code> header.
+    </p>
+  </div>
+
+  <!-- QUICK START -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Quick Start</h2>
+    </div>
+    <div class="quickstart-steps">
+      <div class="qs-step">
+        <span class="qs-num">1</span>
+        <div>
+          <strong>Import your products</strong>
+          <p>Upload a CSV or Excel file with your product catalog.</p>
+          <a href="{{ url_for('portal.upload') }}"
+             class="btn btn-ghost btn-sm">Import Now</a>
+        </div>
+      </div>
+      <div class="qs-step">
+        <span class="qs-num">2</span>
+        <div>
+          <strong>Send user interactions</strong>
+          <p>POST to /api/v1/interact when users view, like, or buy.</p>
+        </div>
+      </div>
+      <div class="qs-step">
+        <span class="qs-num">3</span>
+        <div>
+          <strong>Get recommendations</strong>
+          <p>GET from /api/v1/recommend to fetch personalized results.</p>
+          <a href="{{ url_for('portal.docs') }}"
+             class="btn btn-ghost btn-sm">View Full Docs</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

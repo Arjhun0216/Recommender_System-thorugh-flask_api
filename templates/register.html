@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Create Account — RecAPI{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-card">
+
+    <div class="auth-header">
+      <h1>Create Account</h1>
+      <p>Get your API key in seconds</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('portal.register') }}">
+
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" name="name" placeholder="Arjun"
+               required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" name="email"
+               placeholder="you@example.com" required>
+      </div>
+
+      <div class="form-group">
+        <label>App Name</label>
+        <input type="text" name="app_name"
+               placeholder="MovieLens / ShopBot / FoodFinder" required>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password"
+               placeholder="Min 8 characters" required minlength="8">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full">
+        Create Account
+      </button>
+
+    </form>
+
+    <p class="auth-footer">
+      Already have an account?
+      <a href="{{ url_for('portal.login') }}">Log in</a>
+    </p>
+
+  </div>
+</div>
+{% endblock %}

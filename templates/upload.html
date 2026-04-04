@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Import Products — RecAPI{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+
+  <div class="page-header">
+    <h1>Import Products</h1>
+    <p class="muted">
+      Upload your product catalog. We'll read your file
+      and let you map the columns.
+    </p>
+  </div>
+
+  {% if not columns %}
+  <!-- STEP 1 — Upload file -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Step 1 — Upload File</h2>
+      <span class="badge">CSV, XLSX, ODS supported</span>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data"
+          action="{{ url_for('portal.upload') }}">
+      <div class="upload-zone" id="upload-zone">
+        <div class="upload-icon">↑</div>
+        <p>Drag and drop your file here</p>
+        <p class="muted">or</p>
+        <label class="btn btn-ghost">
+          Browse File
+          <input type="file" name="file" id="file-input"
+                 accept=".csv,.xlsx,.ods" hidden
+                 onchange="showFileName(this)">
+        </label>
+        <p class="file-name muted" id="file-name"></p>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">
+        Upload and Read Columns
+      </button>
+    </form>
+  </div>
+
+  {% else %}
+  <!-- STEP 2 — Map columns -->
+  <div class="card">
+    <div class="card-header">
+      <h2>Step 2 — Map Your Columns</h2>
+      <span class="badge badge-green">File read successfully</span>
+    </div>
+
+    <p class="muted">
+      We found <strong>{{ columns|length }}</strong> columns in your file.
+      Tell us which column contains each piece of information.
+    </p>
+
+    <form method="POST" action="{{ url_for('portal.upload') }}">
+      <input type="hidden" name="filename" value="{{ filename }}">
+
+      <div class="form-group">
+        <label>Product ID Column <span class="required">*</span></label>
+        <p class="hint">The unique identifier for each product</p>
+        <select name="id_col" required>
+          <option value="">Select a column...</option>
+          {% for col in columns %}
+            <option value="{{ col }}">{{ col }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Category Column <span class="required">*</span></label>
+        <p class="hint">The product category or type</p>
+        <select name="cat_col" required>
+          <option value="">Select a column...</option>
+          {% for col in columns %}
+            <option value="{{ col }}">{{ col }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Region Column <span class="optional">(optional)</span></label>
+        <p class="hint">Leave blank if your products are not region-specific</p>
+        <select name="region_col">
+          <option value="">None</option>
+          {% for col in columns %}
+            <option value="{{ col }}">{{ col }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-full">
+        Import Products
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

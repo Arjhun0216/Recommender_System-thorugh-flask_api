@@ -1,0 +1,505 @@
+{% extends "base.html" %}
+{% block title %}API Documentation — RecAPI{% endblock %}
+
+{% block content %}
+<div class="docs-container">
+
+  <div class="docs-sidebar">
+    <p class="sidebar-title">Endpoints</p>
+    <a href="#register"  class="sidebar-link">Register</a>
+    <a href="#interact"  class="sidebar-link">Post Interaction</a>
+    <a href="#recommend" class="sidebar-link">Get Recommendations</a>
+    <a href="#users"     class="sidebar-link">List Users</a>
+    <a href="#health"    class="sidebar-link">Health Check</a>
+    <p class="sidebar-title">Reference</p>
+    <a href="#actions"   class="sidebar-link">Action Weights</a>
+    <a href="#errors"    class="sidebar-link">Error Codes</a>
+  </div>
+
+  <div class="docs-content">
+
+    <!-- HEADER -->
+    <div class="docs-header">
+      <h1>API Documentation</h1>
+      <p class="muted">
+        Base URL:
+        <code>{{ request.host_url }}api/v1</code>
+      </p>
+
+      {% if current_user.is_authenticated %}
+      <div class="key-display">
+        <span class="muted">Your API Key:</span>
+        <code id="docs-key">{{ api_key }}</code>
+        <button class="btn btn-ghost btn-sm"
+                onclick="copyKey('{{ api_key }}')">Copy</button>
+      </div>
+      {% endif %}
+
+      <!-- LANGUAGE SELECTOR -->
+      <div class="lang-selector">
+        <span class="muted">Language:</span>
+        <div class="lang-tabs">
+          <button class="lang-tab active" onclick="switchLang('python', this)">Python</button>
+          <button class="lang-tab" onclick="switchLang('javascript', this)">JavaScript</button>
+          <button class="lang-tab" onclick="switchLang('php', this)">PHP</button>
+          <button class="lang-tab" onclick="switchLang('nodejs', this)">Node.js</button>
+          <button class="lang-tab" onclick="switchLang('ruby', this)">Ruby</button>
+          <button class="lang-tab" onclick="switchLang('java', this)">Java</button>
+          <button class="lang-tab" onclick="switchLang('go', this)">Go</button>
+          <button class="lang-tab" onclick="switchLang('curl', this)">curl</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── POST INTERACT ── -->
+    <div class="doc-section" id="interact">
+      <h2>POST /interact</h2>
+      <p>Record a user action on an item. Triggers recommendation generation automatically.</p>
+
+      <div class="param-table">
+        <div class="param-row header">
+          <span>Field</span><span>Type</span><span>Required</span><span>Description</span>
+        </div>
+        <div class="param-row">
+          <span><code>user_id</code></span><span>string</span>
+          <span class="required">Yes</span>
+          <span>Your user's unique ID</span>
+        </div>
+        <div class="param-row">
+          <span><code>item_id</code></span><span>string</span>
+          <span class="required">Yes</span>
+          <span>Your product/item ID</span>
+        </div>
+        <div class="param-row">
+          <span><code>action</code></span><span>string</span>
+          <span class="required">Yes</span>
+          <span>view, like, cart, or buy</span>
+        </div>
+        <div class="param-row">
+          <span><code>region</code></span><span>string</span>
+          <span class="optional">No</span>
+          <span>User's region (e.g. IN-TN)</span>
+        </div>
+        <div class="param-row">
+          <span><code>category</code></span><span>string</span>
+          <span class="optional">No</span>
+          <span>Item category</span>
+        </div>
+      </div>
+
+      <!-- Code blocks per language -->
+      <div class="code-block lang-python">
+        <div class="code-header">
+          <span>Python</span>
+          <button onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>import requests
+
+API_KEY = "{{ api_key }}"
+BASE    = "{{ request.host_url }}api/v1"
+
+def track_interaction(user_id, item_id, action,
+                      region=None, category=None):
+    try:
+        requests.post(
+            f"{BASE}/interact",
+            headers={"X-API-Key": API_KEY,
+                     "Content-Type": "application/json"},
+            json={"user_id":  user_id,
+                  "item_id":  item_id,
+                  "action":   action,
+                  "region":   region,
+                  "category": category},
+            timeout=2
+        )
+    except Exception:
+        pass  # Never break your app if API is down
+
+# Usage
+track_interaction("user_123", "product_456", "buy",
+                  region="IN-TN", category="electronics")</pre>
+      </div>
+
+      <div class="code-block lang-javascript" style="display:none">
+        <div class="code-header">
+          <span>JavaScript</span>
+          <button onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>const API_KEY = "{{ api_key }}";
+const BASE    = "{{ request.host_url }}api/v1";
+
+async function trackInteraction(userId, itemId, action,
+                                region, category) {
+  try {
+    await fetch(`${BASE}/interact`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": API_KEY
+      },
+      body: JSON.stringify({
+        user_id: userId, item_id: itemId,
+        action, region, category
+      })
+    });
+  } catch (e) {} // Silent fail
+}
+
+// Usage
+trackInteraction("user_123", "product_456", "buy",
+                 "IN-TN", "electronics");</pre>
+      </div>
+
+      <div class="code-block lang-php" style="display:none">
+        <div class="code-header">
+          <span>PHP</span>
+          <button onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>&lt;?php
+$api_key = "{{ api_key }}";
+$base    = "{{ request.host_url }}api/v1";
+
+function trackInteraction($userId, $itemId, $action,
+                          $region=null, $category=null) {
+  global $api_key, $base;
+  $data = json_encode([
+    "user_id"  => $userId,
+    "item_id"  => $itemId,
+    "action"   => $action,
+    "region"   => $region,
+    "category" => $category
+  ]);
+  $ch = curl_init("$base/interact");
+  curl_setopt($ch, CURLOPT_POST, true);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+  curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    "Content-Type: application/json",
+    "X-API-Key: $api_key"
+  ]);
+  curl_setopt($ch, CURLOPT_TIMEOUT, 2);
+  curl_exec($ch);
+  curl_close($ch);
+}
+
+// Usage
+trackInteraction("user_123", "product_456", "buy");</pre>
+      </div>
+
+      <div class="code-block lang-nodejs" style="display:none">
+        <div class="code-header">
+          <span>Node.js</span>
+          <button onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>const axios = require("axios");
+
+const API_KEY = "{{ api_key }}";
+const BASE    = "{{ request.host_url }}api/v1";
+const headers = { "X-API-Key": API_KEY };
+
+async function trackInteraction(userId, itemId, action,
+                                region, category) {
+  try {
+    await axios.post(`${BASE}/interact`,
+      { user_id: userId, item_id: itemId,
+        action, region, category },
+      { headers, timeout: 2000 }
+    );
+  } catch (e) {}
+}
+
+// Usage
+trackInteraction("user_123", "product_456", "buy");</pre>
+      </div>
+
+      <div class="code-block lang-ruby" style="display:none">
+        <div class="code-header">
+          <span>Ruby</span>
+          <button onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>require "net/http"
+require "json"
+
+API_KEY = "{{ api_key }}"
+BASE    = "{{ request.host_url }}api/v1"
+
+def track_interaction(user_id, item_id, action,
+                      region: nil, category: nil)
+  uri  = URI("#{BASE}/interact")
+  http = Net::HTTP.new(uri.host, uri.port)
+  http.use_ssl = uri.scheme == "https"
+  req  = Net::HTTP::Post.new(uri)
+  req["Content-Type"] = "application/json"
+  req["X-API-Key"]    = API_KEY
+  req.body = {
+    user_id: user_id, item_id: item_id,
+    action: action, region: region,
+    category: category
+  }.to_json
+  http.request(req)
+rescue
+end
+
+# Usage
+track_interaction("user_123", "product_456", "buy")</pre>
+      </div>
+
+      <div class="code-block lang-java" style="display:none">
+        <div class="code-header">
+          <span>Java</span>
+          <button onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>import java.net.http.*;
+import java.net.URI;
+
+public class RecAPI {
+  static String API_KEY = "{{ api_key }}";
+  static String BASE    = "{{ request.host_url }}api/v1";
+  static HttpClient client = HttpClient.newHttpClient();
+
+  public static void trackInteraction(
+      String userId, String itemId, String action) {
+    try {
+      String body = String.format(
+        "{\"user_id\":\"%s\",\"item_id\":\"%s\",\"action\":\"%s\"}",
+        userId, itemId, action);
+      HttpRequest req = HttpRequest.newBuilder()
+        .uri(URI.create(BASE + "/interact"))
+        .header("Content-Type", "application/json")
+        .header("X-API-Key", API_KEY)
+        .POST(HttpRequest.BodyPublishers.ofString(body))
+        .build();
+      client.send(req, HttpResponse.BodyHandlers.ofString());
+    } catch (Exception e) {}
+  }
+}</pre>
+      </div>
+
+      <div class="code-block lang-go" style="display:none">
+        <div class="code-header">
+          <span>Go</span>
+          <button onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>package main
+
+import (
+  "bytes"; "encoding/json"; "net/http"
+)
+
+const apiKey = "{{ api_key }}"
+const base   = "{{ request.host_url }}api/v1"
+
+func trackInteraction(userID, itemID, action string) {
+  body, _ := json.Marshal(map[string]string{
+    "user_id": userID,
+    "item_id": itemID,
+    "action":  action,
+  })
+  req, _ := http.NewRequest("POST",
+    base+"/interact", bytes.NewBuffer(body))
+  req.Header.Set("Content-Type", "application/json")
+  req.Header.Set("X-API-Key", apiKey)
+  http.DefaultClient.Do(req)
+}</pre>
+      </div>
+
+      <div class="code-block lang-curl" style="display:none">
+        <div class="code-header">
+          <span>curl</span>
+          <button onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>curl -X POST {{ request.host_url }}api/v1/interact \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: {{ api_key }}" \
+  -d '{
+    "user_id":  "user_123",
+    "item_id":  "product_456",
+    "action":   "buy",
+    "region":   "IN-TN",
+    "category": "electronics"
+  }'</pre>
+      </div>
+    </div>
+
+    <!-- ── GET RECOMMEND ── -->
+    <div class="doc-section" id="recommend">
+      <h2>GET /recommend</h2>
+      <p>Fetch personalized recommendations for a user.</p>
+
+      <div class="param-table">
+        <div class="param-row header">
+          <span>Param</span><span>Type</span>
+          <span>Required</span><span>Description</span>
+        </div>
+        <div class="param-row">
+          <span><code>user_id</code></span><span>string</span>
+          <span class="required">Yes</span>
+          <span>The user to recommend for</span>
+        </div>
+        <div class="param-row">
+          <span><code>limit</code></span><span>integer</span>
+          <span class="optional">No</span>
+          <span>Max results (default 10)</span>
+        </div>
+      </div>
+
+      <div class="code-block lang-python">
+        <div class="code-header">
+          <span>Python</span>
+          <button onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>def get_recommendations(user_id, limit=10):
+    try:
+        r = requests.get(
+            f"{BASE}/recommend",
+            headers={"X-API-Key": API_KEY},
+            params={"user_id": user_id, "limit": limit},
+            timeout=2
+        )
+        return r.json().get("recommendations", [])
+    except Exception:
+        return []
+
+# Usage
+recs = get_recommendations("user_123")
+for item in recs:
+    print(item["item_id"], item["score"])</pre>
+      </div>
+
+      <div class="code-block lang-javascript" style="display:none">
+        <div class="code-header">
+          <span>JavaScript</span>
+          <button onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>async function getRecommendations(userId, limit=10) {
+  try {
+    const res = await fetch(
+      `${BASE}/recommend?user_id=${userId}&limit=${limit}`,
+      { headers: { "X-API-Key": API_KEY } }
+    );
+    const data = await res.json();
+    return data.recommendations || [];
+  } catch (e) { return []; }
+}
+
+// Usage
+const recs = await getRecommendations("user_123");
+recs.forEach(r => console.log(r.item_id, r.score));</pre>
+      </div>
+
+      <div class="code-block lang-php" style="display:none">
+        <div class="code-header">
+          <span>PHP</span>
+          <button onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>&lt;?php
+function getRecommendations($userId, $limit=10) {
+  global $api_key, $base;
+  $url = "$base/recommend?user_id=$userId&limit=$limit";
+  $ch  = curl_init($url);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($ch, CURLOPT_HTTPHEADER,
+    ["X-API-Key: $api_key"]);
+  $res = curl_exec($ch);
+  curl_close($ch);
+  $data = json_decode($res, true);
+  return $data["recommendations"] ?? [];
+}</pre>
+      </div>
+
+      <div class="code-block lang-nodejs" style="display:none">
+        <div class="code-header">
+          <span>Node.js</span>
+          <button onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>async function getRecommendations(userId, limit=10) {
+  try {
+    const res = await axios.get(`${BASE}/recommend`, {
+      headers,
+      params: { user_id: userId, limit }
+    });
+    return res.data.recommendations || [];
+  } catch (e) { return []; }
+}</pre>
+      </div>
+
+      <div class="code-block lang-curl" style="display:none">
+        <div class="code-header">
+          <span>curl</span>
+          <button onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre>curl "{{ request.host_url }}api/v1/recommend?user_id=user_123&limit=10" \
+  -H "X-API-Key: {{ api_key }}"</pre>
+      </div>
+    </div>
+
+    <!-- ── ACTION WEIGHTS ── -->
+    <div class="doc-section" id="actions">
+      <h2>Action Weights</h2>
+      <p>Each action carries a different weight in the recommendation algorithm.</p>
+      <div class="param-table">
+        <div class="param-row header">
+          <span>Action</span><span>Weight</span>
+          <span>Meaning</span><span></span>
+        </div>
+        <div class="param-row">
+          <span><code>view</code></span>
+          <span class="badge">2</span>
+          <span>User viewed the item</span><span></span>
+        </div>
+        <div class="param-row">
+          <span><code>like</code></span>
+          <span class="badge">4</span>
+          <span>User liked or saved</span><span></span>
+        </div>
+        <div class="param-row">
+          <span><code>cart</code></span>
+          <span class="badge">8</span>
+          <span>User added to cart</span><span></span>
+        </div>
+        <div class="param-row">
+          <span><code>buy</code></span>
+          <span class="badge badge-green">10</span>
+          <span>User completed purchase</span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ERROR CODES ── -->
+    <div class="doc-section" id="errors">
+      <h2>Error Codes</h2>
+      <div class="param-table">
+        <div class="param-row header">
+          <span>Code</span><span>Meaning</span>
+          <span>Fix</span><span></span>
+        </div>
+        <div class="param-row">
+          <span><code>400</code></span>
+          <span>Bad Request</span>
+          <span>Missing required field</span><span></span>
+        </div>
+        <div class="param-row">
+          <span><code>401</code></span>
+          <span>Unauthorized</span>
+          <span>Add X-API-Key header</span><span></span>
+        </div>
+        <div class="param-row">
+          <span><code>403</code></span>
+          <span>Forbidden</span>
+          <span>Invalid API key</span><span></span>
+        </div>
+        <div class="param-row">
+          <span><code>404</code></span>
+          <span>Not Found</span>
+          <span>User does not exist yet</span><span></span>
+        </div>
+        <div class="param-row">
+          <span><code>409</code></span>
+          <span>Conflict</span>
+          <span>Email already registered</span><span></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

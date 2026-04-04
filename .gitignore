@@ -36,3 +36,7 @@ instance/
 
 # Jupyter
 .ipynb_checkpoints/
+
+
+uploads/*
+!uploads/.gitkeep   

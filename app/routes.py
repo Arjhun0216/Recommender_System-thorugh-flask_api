@@ -1,8 +1,8 @@
 # app/routes.py
 from flask import Blueprint, request, jsonify
 from app import db
-from app.models import Developer, User, Item, Interaction, Recommendation
-from app.engine import generate_recommendations
+from app.models import User, Item, Interaction, Recommendation, Developer
+from app.engine import generate_recommendations, record_interaction
 from app.auth import require_api_key
 from datetime import datetime
 
@@ -10,14 +10,14 @@ api = Blueprint("api", __name__)
 
 
 # ─────────────────────────────────────────
-# REGISTER — no API key needed for this one
+# REGISTER
 # POST /api/v1/register
 # ─────────────────────────────────────────
 @api.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
 
-    required = ["name", "email", "app_name"]
+    required = ["name", "email", "app_name", "password"]
     for field in required:
         if not data or field not in data:
             return jsonify({
@@ -25,7 +25,6 @@ def register():
                 "message": f"Missing required field: {field}"
             }), 400
 
-    # Check email not already registered
     existing = Developer.query.filter_by(email=data["email"]).first()
     if existing:
         return jsonify({
@@ -33,17 +32,20 @@ def register():
             "message": "Email already registered."
         }), 409
 
+    from app import bcrypt
     developer = Developer(
-        name     = data["name"],
-        email    = data["email"],
-        app_name = data["app_name"]
+        name          = data["name"],
+        email         = data["email"],
+        app_name      = data["app_name"],
+        password_hash = bcrypt.generate_password_hash(
+                            data["password"]).decode("utf-8")
     )
     db.session.add(developer)
     db.session.commit()
 
     return jsonify({
         "status":   "success",
-        "message":  "Registration successful. Store your API key safely — it will not be shown again.",
+        "message":  "Registered successfully.",
         "api_key":  developer.api_key,
         "app_name": developer.app_name,
     }), 201
@@ -93,25 +95,38 @@ def interact(developer):
     region   = data.get("region")
     category = data.get("category")
 
-    # Create user if not exists — scoped to this api_key
-    user = User.query.filter_by(api_key=api_key, user_id=user_id).first()
+    # ── Hash Set duplicate check ──
+    is_new = record_interaction(
+        api_key, user_id, item_id, action, region, category
+    )
+    if not is_new:
+        return jsonify({
+            "status":  "duplicate",
+            "message": "Interaction already recorded recently"
+        }), 200
+
+    # Create user if not exists
+    user = User.query.filter_by(
+        api_key=api_key, user_id=user_id
+    ).first()
     if not user:
-        user = User(api_key=api_key, user_id=user_id, region=region)
+        user = User(api_key=api_key,
+                    user_id=user_id, region=region)
         db.session.add(user)
 
-    # Create item if not exists — scoped to this api_key
-    item = Item.query.filter_by(api_key=api_key, item_id=item_id).first()
+    # Create item if not exists
+    item = Item.query.filter_by(
+        api_key=api_key, item_id=item_id
+    ).first()
     if not item:
-        item = Item(api_key=api_key, item_id=item_id, category=category, region=region)
+        item = Item(api_key=api_key, item_id=item_id,
+                    category=category, region=region)
         db.session.add(item)
 
     interaction = Interaction(
-        api_key=api_key,
-        user_id=user_id,
-        item_id=item_id,
-        action=action,
-        region=region,
-        category=category
+        api_key=api_key, user_id=user_id,
+        item_id=item_id, action=action,
+        region=region, category=category
     )
     db.session.add(interaction)
     db.session.commit()
@@ -128,7 +143,7 @@ def interact(developer):
 
 # ─────────────────────────────────────────
 # GET RECOMMENDATIONS
-# GET /api/v1/recommend?user_id=xxx
+# GET /api/v1/recommend
 # ─────────────────────────────────────────
 @api.route("/recommend", methods=["GET"])
 @require_api_key
@@ -143,7 +158,9 @@ def recommend(developer):
         }), 400
 
     api_key = developer.api_key
-    user = User.query.filter_by(api_key=api_key, user_id=user_id).first()
+    user = User.query.filter_by(
+        api_key=api_key, user_id=user_id
+    ).first()
     if not user:
         return jsonify({
             "status":  "error",
@@ -198,8 +215,7 @@ def get_users(developer):
 @require_api_key
 def get_interactions(developer):
     user_id = request.args.get("user_id")
-
-    query = Interaction.query.filter_by(api_key=developer.api_key)
+    query   = Interaction.query.filter_by(api_key=developer.api_key)
     if user_id:
         query = query.filter_by(user_id=user_id)
 
