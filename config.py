@@ -14,13 +14,9 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    # Railway injects DATABASE_URL automatically
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        "DATABASE_URL",
-        "sqlite:///recommendation.db"
-    ).replace("postgres://", "postgresql://")
-    # ↑ Railway gives postgres:// but SQLAlchemy needs postgresql://
-    # This one line fixes that automatically
+    # PythonAnywhere MySQL format:
+    # mysql+pymysql://username:password@username.mysql.pythonanywhere-services.com/username$dbname
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///recommendation.db")
 
 config_map = {
     "development": DevelopmentConfig,
